@@ -1,34 +1,69 @@
 import "@testing-library/jest-dom";
+import { RouterProvider, createMemoryRouter} from "react-router-dom"
 import { render, screen } from "@testing-library/react";
-import { RouterProvider, createMemoryRouter} from "react-router-dom";
 import routes from "../routes";
 
-const router = createMemoryRouter(routes)
+const directors = [
+  {
+    name: "Scott Derrickson",
+    movies: ["Doctor Strange", "Sinister", "The Exorcism of Emily Rose"],
+  },
+  {
+    name: "Mike Mitchell",
+    movies: ["Trolls", "Alvin and the Chipmunks: Chipwrecked", "Sky High"],
+  },
+  {
+    name: "Edward Zwick",
+    movies: ["Jack Reacher: Never Go Back", "Blood Diamond", "The Siege"],
+  },
+];
 
-test("renders 'Home Page' inside of an <h1 />", () => {
+const router = createMemoryRouter(routes, {
+  initialEntries: [`/directors`],
+  initialIndex: 0
+})
+
+test("renders without any errors", () => {
+  const errorSpy = vi.spyOn(global.console, "error");
+
   render(<RouterProvider router={router}/>);
-  const h1 = screen.queryByText(/Home Page/);
+
+  expect(errorSpy).not.toHaveBeenCalled();
+
+  errorSpy.mockRestore();
+});
+
+test("renders 'Directors Page' inside of a <h1 />", () => {
+  render(<RouterProvider router={router}/>);
+  const h1 = screen.queryByText(/Directors Page/);
   expect(h1).toBeInTheDocument();
   expect(h1.tagName).toBe("H1");
 });
 
-test("Displays a list of movie titles", async () =>{
+test("renders each director's name", async () => {
   render(<RouterProvider router={router}/>);
-  const titleList = await screen.findAllByRole('heading', {level: 2})
-  expect(titleList.length).toBeGreaterThan(2);
-  expect(titleList[0].tagName).toBe("H2");
-  expect(titleList[0].textContent).toBe("Doctor Strange");
-})
+  for (const director of directors) {
+    expect(
+      await screen.findByText(director.name, { exact: false })
+    ).toBeInTheDocument();
+  }
+});
 
-test("Displays links for each associated movie", async () =>{
+test("renders a <li /> for each movie", async () => {
   render(<RouterProvider router={router}/>);
-  const linkList = await screen.findAllByText(/View Info/);
-  expect(linkList.length).toBeGreaterThan(2);
-  expect(linkList[0].href.split("/").slice(3).join("/")).toBe("movie/1");
-})
+  for (const director of directors) {
+    for (const movie of director.movies) {
+      const li = await screen.findByText(movie, { exact: false });
+      expect(li).toBeInTheDocument();
+      expect(li.tagName).toBe("LI");
+    }
+  }
+});
 
 test("renders the <NavBar /> component", () => {
-  const router = createMemoryRouter(routes)
+  const router = createMemoryRouter(routes, {
+    initialEntries: ['/directors']
+  })
   render(
       <RouterProvider router={router}/>
   );

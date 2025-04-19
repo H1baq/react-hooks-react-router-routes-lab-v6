@@ -1,71 +1,55 @@
 import "@testing-library/jest-dom";
-import { RouterProvider, createMemoryRouter} from "react-router-dom"
+import { RouterProvider, createMemoryRouter, MemoryRouter} from "react-router-dom"
 import { render, screen } from "@testing-library/react";
 import routes from "../routes";
 
-const directors = [
-  {
-    name: "Scott Derrickson",
-    movies: ["Doctor Strange", "Sinister", "The Exorcism of Emily Rose"],
-  },
-  {
-    name: "Mike Mitchell",
-    movies: ["Trolls", "Alvin and the Chipmunks: Chipwrecked", "Sky High"],
-  },
-  {
-    name: "Edward Zwick",
-    movies: ["Jack Reacher: Never Go Back", "Blood Diamond", "The Siege"],
-  },
-];
 
-const router = createMemoryRouter(routes, {
-  initialEntries: [`/directors`],
-  initialIndex: 0
-})
 
-test("renders without any errors", () => {
-  const errorSpy = vi.spyOn(global.console, "error");
-
-  render(<RouterProvider router={router}/>);
-
-  expect(errorSpy).not.toHaveBeenCalled();
-
-  errorSpy.mockRestore();
+test('renders the Home component on route "/"', () => {
+  const router = createMemoryRouter(routes)
+  render(
+    <RouterProvider router={router}/>
+);
+  expect(screen.getByText(/Home Page/)).toBeInTheDocument();
 });
 
-test("renders 'Directors Page' inside of a <h1 />", () => {
-  render(<RouterProvider router={router}/>);
-  const h1 = screen.queryByText(/Directors Page/);
-  expect(h1).toBeInTheDocument();
-  expect(h1.tagName).toBe("H1");
+test('renders the Actors component on route "/actors"', () => {
+    const router = createMemoryRouter(routes, {
+        initialEntries: ['/actors']
+    })
+  render(
+    <RouterProvider router={router}/>
+);
+  expect(screen.getByText(/Actors Page/)).toBeInTheDocument();
 });
 
-test("renders each director's name", async () => {
-  render(<RouterProvider router={router}/>);
-  for (const director of directors) {
-    expect(
-      await screen.findByText(director.name, { exact: false })
-    ).toBeInTheDocument();
-  }
-});
-
-test("renders a <li /> for each movie", async () => {
-  render(<RouterProvider router={router}/>);
-  for (const director of directors) {
-    for (const movie of director.movies) {
-      const li = await screen.findByText(movie, { exact: false });
-      expect(li).toBeInTheDocument();
-      expect(li.tagName).toBe("LI");
-    }
-  }
-});
-
-test("renders the <NavBar /> component", () => {
-  const router = createMemoryRouter(routes, {
-    initialEntries: ['/directors']
-  })
+test('renders the Directors component on route "/directors"', () => {
+    const router = createMemoryRouter(routes, {
+        initialEntries: ['/directors']
+    })
   render(
       <RouterProvider router={router}/>
   );
-  expect(document.querySelector(".navbar")).toBeInTheDocument();
+  expect(screen.queryByText(/Directors Page/)).toBeInTheDocument();
 });
+
+test('renders the Movie component on route "/movie/:id"', async () => {
+    const id = 1
+    const router = createMemoryRouter(routes, {
+        initialEntries: [`/movie/${id}`]
+    })
+  render(
+    <RouterProvider router={router}/>
+);
+  expect(await screen.findByText(/Doctor Strange/)).toBeInTheDocument();
+});
+
+test("renders an error page when given a bad URL", () =>{
+  const router = createMemoryRouter(routes, {
+      initialEntries: ["/bad-route"]
+  })
+  render(
+      <RouterProvider router={router} />
+  )
+  expect(screen.getByText(/Oops! Looks like something went wrong./)).toBeInTheDocument()
+})
